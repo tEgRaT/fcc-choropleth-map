@@ -3,11 +3,12 @@ import React, { useLayoutEffect, useCallback, useEffect, useRef, useState } from
 import * as d3 from 'd3';
 import { legendColor } from 'd3-svg-legend';
 import * as topojson from 'topojson';
-import ReactTooltip from 'react-tooltip';
+// import ReactTooltip from 'react-tooltip';
 
 const Map = ({ mapData, eduData, }) => {
     const svgRef = useRef();
-    const [tooltipContent, setTooltipContent] = useState('');
+    // const [tooltipContent, setTooltipContent] = useState('');
+    const tooltip = useRef(null);
 
     const mapWidth = 975;
     const mapHeight = 610;
@@ -70,7 +71,21 @@ const Map = ({ mapData, eduData, }) => {
             .call(legendLinear);
     }, [colorScale]);
 
-    const SvgMap = ({ setTooltipContent }) => <svg viewBox={`0 0 ${mapWidth} ${mapHeight}`} ref={svgRef}>
+    useEffect(() => {
+        tooltip.current = d3.select('body')
+            .append('div')
+            .attr('class', 'tooltip')
+            .attr('id', 'tooltip')
+            .style('position', 'absolute')
+            // .style('z-index', '10')
+            .style('visibility', 'hidden')
+            .style('background', '#fff')
+            .style('border-radius', '5px')
+            .style('padding', '10px')
+            .style('font-size', '12px');
+    }, []);
+
+    const SvgMap = () => <svg viewBox={`0 0 ${mapWidth} ${mapHeight}`} ref={svgRef}>
         <path fill='transparent' stroke="#ddd" d={path(topojson.feature(mapData, nation ? nation : {}))} />
 
         <g id="states">
@@ -104,9 +119,21 @@ const Map = ({ mapData, eduData, }) => {
                     // strokeLinecap='round'
                     originalx={county.geometry.coordinates[0][0][0]}
                     originaly={county.geometry.coordinates[0][0][1]}
-                    onMouseEnter={() => setTooltipContent(getEducation(county.id))}
-                    onMouseLeave={() => setTooltipContent('')}
-                    data-tip=""
+                    onMouseEnter={e => {
+                        tooltip.current
+                            .attr('visibility', 'visible')
+                            .style('opacity', 0.9)
+                            .attr('data-education', getEducation(e.target.dataset.fips));
+                        tooltip.current
+                            .html(
+                                `${e.target.dataset.fips}<br>${getEducation(e.target.dataset.fips)}%`
+                                )
+                                .style('left', `${e.pageX + 10}px`)
+                                .style('top', `${e.pageY + 10}px`);
+
+                    }}
+                    onMouseLeave={() => tooltip.current.attr('visibility', 'hidden')}
+                    // data-tip=""
                 />
             )}
         </g>
@@ -114,8 +141,8 @@ const Map = ({ mapData, eduData, }) => {
 
     return (
         <div style={{ width: '100%', height: '100%' }}>
-            <SvgMap setTooltipContent={setTooltipContent} />
-            <ReactTooltip id="tooltip">{tooltipContent}</ReactTooltip>
+            <SvgMap />
+            {/* <ReactTooltip id="tooltip">{tooltipContent}</ReactTooltip> */}
         </div>
     );
 };
