@@ -1,14 +1,26 @@
-import React, { useLayoutEffect, useCallback, useEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useCallback, useEffect, useRef, } from 'react';
 
 import * as d3 from 'd3';
 import { legendColor } from 'd3-svg-legend';
 import * as topojson from 'topojson';
 // import ReactTooltip from 'react-tooltip';
 
+const tooltip = d3.select('body')
+    .append('div')
+    .attr('class', 'tooltip')
+    .attr('id', 'tooltip')
+    .style('position', 'absolute')
+    // .style('z-index', '10')
+    .style('visibility', 'hidden')
+    .style('background', '#fff')
+    .style('border-radius', '5px')
+    .style('padding', '10px')
+    .style('font-size', '12px');
+
 const Map = ({ mapData, eduData, }) => {
     const svgRef = useRef();
     // const [tooltipContent, setTooltipContent] = useState('');
-    const tooltip = useRef(null);
+    // const tooltip = useRef(null);
 
     const mapWidth = 975;
     const mapHeight = 610;
@@ -70,7 +82,7 @@ const Map = ({ mapData, eduData, }) => {
             .select('.legendLinear')
             .call(legendLinear);
     }, [colorScale]);
-
+/*
     useEffect(() => {
         tooltip.current = d3.select('body')
             .append('div')
@@ -84,7 +96,7 @@ const Map = ({ mapData, eduData, }) => {
             .style('padding', '10px')
             .style('font-size', '12px');
     }, []);
-
+*/
     const SvgMap = () => <svg viewBox={`0 0 ${mapWidth} ${mapHeight}`} ref={svgRef}>
         <path fill='transparent' stroke="#ddd" d={path(topojson.feature(mapData, nation ? nation : {}))} />
 
@@ -120,20 +132,20 @@ const Map = ({ mapData, eduData, }) => {
                     originalx={county.geometry.coordinates[0][0][0]}
                     originaly={county.geometry.coordinates[0][0][1]}
                     onMouseEnter={e => {
-                        tooltip.current
-                            .attr('visibility', 'visible')
+                        const curEduData = eduData?.find(({ fips }) => fips === Number(e.target.dataset.fips));
+                        tooltip
+                            .style('visibility', 'visible')
                             .style('opacity', 0.9)
-                            .attr('data-education', getEducation(e.target.dataset.fips));
-                        tooltip.current
+                            .attr('data-education', getEducation(e.target.dataset.fips))
                             .html(
-                                `${e.target.dataset.fips}<br>${getEducation(e.target.dataset.fips)}%`
-                                )
-                                .style('left', `${e.pageX + 10}px`)
-                                .style('top', `${e.pageY + 10}px`);
+                                `${curEduData?.area_name}, ${curEduData?.state}: ${curEduData.bachelorsOrHigher}%`
+                            )
+                            .style('left', `${e.pageX + 10}px`)
+                            .style('top', `${e.pageY + 10}px`);
 
                     }}
-                    onMouseLeave={() => tooltip.current.attr('visibility', 'hidden')}
-                    // data-tip=""
+                    onMouseLeave={() => tooltip.style('visibility', 'hidden')}
+                // data-tip=""
                 />
             )}
         </g>
